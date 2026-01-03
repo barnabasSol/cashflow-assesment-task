@@ -10,7 +10,7 @@ type RabbitMQ struct {
 }
 
 func InitRabbitMQ() (*RabbitMQ, error) {
-	uri := "amqp://admin:strongpassword@rabbitmq:5672"
+	uri := "amqp://admin:strongpassword@localhost:5672"
 	conn, err := amqp.Dial(uri)
 	if err != nil {
 		return nil, err

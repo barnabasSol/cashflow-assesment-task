@@ -2,6 +2,8 @@ package paymentmaking
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 	"net/http"
 	broker "payment-service/internal/broker/rabbitmq"
 	"payment-service/internal/models"
@@ -12,7 +14,10 @@ import (
 )
 
 type Service interface {
-	CreatePayment(context.Context, CreatePaymentRequest) (*CreatePaymentResponse, error)
+	CreatePayment(
+		context.Context,
+		CreatePaymentRequest,
+	) (*CreatePaymentResponse, error)
 }
 
 type service struct {
@@ -53,9 +58,25 @@ func (s *service) CreatePayment(
 		return nil, err
 	}
 
+	payload, _ := json.Marshal(broker.NewPayment{
+		PaymentId: transaction.ID,
+	})
+
+	err = s.rmq.Publish(broker.Message{
+		Exchange: broker.PaymentExchangeName,
+		Topic:    broker.PaymentExchangeRoutingKey,
+		Data:     payload,
+	})
+	if err != nil {
+		return nil, echo.NewHTTPError(
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+	}
+	log.Println("successfuly published message")
+
 	return &CreatePaymentResponse{
 		PaymentId: transaction.ID,
 		Status:    transaction.Status,
-		CreatedAt: transaction.CreatedAt,
 	}, nil
 }

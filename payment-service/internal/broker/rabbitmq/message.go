@@ -9,6 +9,5 @@ type Message struct {
 }
 
 type NewPayment struct {
-	Id     string `json:"id"`
-	Status int    `json:"status"`
+	PaymentId string `json:"id"`
 }

@@ -40,7 +40,7 @@ func (r *repository) CreateOrGetTransaction(
 	INSERT INTO transactions (id, reference, amount, currency, status)
 	VALUES ($1, $2, $3, $4, $5)
 	ON CONFLICT (reference) DO NOTHING
-	RETURNING id, amount, currency, status;
+	RETURNING id, amount, currency, status, created_at;
 	`
 
 	var result models.Transaction
@@ -58,6 +58,7 @@ func (r *repository) CreateOrGetTransaction(
 		&result.Amount,
 		&result.Currency,
 		&result.Status,
+		&result.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -80,7 +81,7 @@ func (r *repository) GetTransactionByRef(
 ) (*models.Transaction, error) {
 
 	query := `
-	SELECT id, amount, currency, status
+	SELECT id, amount, currency, status, created_at
 	FROM transactions
 	WHERE reference = $1
 	`
@@ -92,6 +93,7 @@ func (r *repository) GetTransactionByRef(
 		&tx.Amount,
 		&tx.Currency,
 		&tx.Status,
+		&tx.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {

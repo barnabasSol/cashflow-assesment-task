@@ -1,7 +1,5 @@
 package paymentmaking
 
-import "time"
-
 type CreatePaymentRequest struct {
 	Ref      string `json:"ref"`
 	Amount   string `json:"amount"`
@@ -9,7 +7,6 @@ type CreatePaymentRequest struct {
 }
 
 type CreatePaymentResponse struct {
-	PaymentId string    `json:"ref"`
-	Status    int       `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
+	PaymentId string `json:"payment_id"`
+	Status    int    `json:"status"`
 }
