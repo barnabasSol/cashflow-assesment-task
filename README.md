@@ -110,6 +110,3 @@ Response example:
   "created_at": "2026-01-04T16:20:51.082206Z"
 }
 ```
-
-- Only payments with status `PENDING` are processed.
-- Payments with `SUCCESS` or `FAILED` are not reprocessed.
