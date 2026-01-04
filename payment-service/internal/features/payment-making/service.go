@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	broker "payment-service/internal/broker/rabbitmq"
+	"payment-service/internal/features/common"
 	"payment-service/internal/models"
 	"time"
 
@@ -18,6 +19,10 @@ type Service interface {
 		context.Context,
 		CreatePaymentRequest,
 	) (*CreatePaymentResponse, error)
+	GetPaymentStatus(
+		context.Context,
+		string,
+	) (*GetPaymentStatusResponse, error)
 }
 
 type service struct {
@@ -58,25 +63,53 @@ func (s *service) CreatePayment(
 		return nil, err
 	}
 
-	payload, _ := json.Marshal(broker.NewPayment{
-		PaymentId: transaction.ID,
-	})
+	if transaction.Status == models.TransactionPending {
+		payload, _ := json.Marshal(broker.NewPayment{
+			PaymentId: transaction.ID,
+		})
 
-	err = s.rmq.Publish(broker.Message{
-		Exchange: broker.PaymentExchangeName,
-		Topic:    broker.PaymentExchangeRoutingKey,
-		Data:     payload,
-	})
-	if err != nil {
-		return nil, echo.NewHTTPError(
-			http.StatusInternalServerError,
-			err.Error(),
-		)
+		err = s.rmq.Publish(broker.Message{
+			Exchange: broker.PaymentExchangeName,
+			Topic:    broker.PaymentExchangeRoutingKey,
+			Data:     payload,
+		})
+		if err != nil {
+			return nil, echo.NewHTTPError(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+		}
+		log.Println("successfuly published message")
 	}
-	log.Println("successfuly published message")
 
 	return &CreatePaymentResponse{
 		PaymentId: transaction.ID,
 		Status:    transaction.Status,
+	}, nil
+}
+
+func (s *service) GetPaymentStatus(ctx context.Context, id string) (*GetPaymentStatusResponse, error) {
+	transaction, err := s.repo.GetTransactionByID(ctx, id)
+	if err != nil {
+		switch err {
+		case common.ErrNotFound:
+			return nil, echo.NewHTTPError(
+				http.StatusNotFound,
+				err.Error(),
+			)
+		default:
+			return nil, echo.NewHTTPError(
+				http.StatusInternalServerError,
+				err.Error(),
+			)
+		}
+	}
+
+	return &GetPaymentStatusResponse{
+		Amount:    transaction.DisplayAmount(),
+		Currency:  transaction.Currency,
+		Ref:       transaction.Ref,
+		Status:    transaction.Status,
+		CreatedAt: transaction.CreatedAt,
 	}, nil
 }

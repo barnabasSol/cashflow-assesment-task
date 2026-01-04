@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"log"
-	"payment-service/internal/config"
+	"payment-worker/internal/config"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"

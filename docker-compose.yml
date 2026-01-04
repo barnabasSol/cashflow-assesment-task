@@ -2,11 +2,13 @@ services:
   payment-service:
     depends_on:
       - rabbitmq
-      - postgres
+      - db
     build:
       context: payment-service
       dockerfile: dockerfile
     restart: always
+    env_file:
+      - payment-service/.env
     ports:
       - "1000:1000"
     deploy:
@@ -22,7 +24,7 @@ services:
     restart: always
     depends_on:
       - rabbitmq
-      - postgres
+      - db
     env_file:
       - payment-worker/.env
     deploy:
@@ -51,7 +53,7 @@ services:
     networks:
       - back-tier
 
-  postgres:
+  db:
     image: postgres:17
     container_name: postgres
     restart: always

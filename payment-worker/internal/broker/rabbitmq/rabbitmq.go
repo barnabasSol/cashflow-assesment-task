@@ -1,17 +1,19 @@
 package broker
 
 import (
-	"payment-service/internal/config"
+	"payment-worker/internal/config"
+	"payment-worker/internal/db"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitMQ struct {
+	db   *db.Postgres
 	conn *amqp.Connection
 	ch   *amqp.Channel
 }
 
-func InitRabbitMQ() (*RabbitMQ, error) {
+func InitRabbitMQ(db *db.Postgres) (*RabbitMQ, error) {
 	uri := config.GetSecret("RMQ_URL")
 	conn, err := amqp.Dial(uri)
 	if err != nil {
@@ -31,6 +33,7 @@ func InitRabbitMQ() (*RabbitMQ, error) {
 	return &RabbitMQ{
 		conn: conn,
 		ch:   ch,
+		db:   db,
 	}, nil
 }
 

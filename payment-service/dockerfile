@@ -5,12 +5,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o payment_service ./cmd/api
 
 FROM alpine:latest
-WORKDIR /root/
+WORKDIR /app
 
 COPY --from=builder /app/payment_service .
+COPY --from=builder /app/migrations ./migrations
 
 CMD ["./payment_service"]

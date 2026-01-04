@@ -2,12 +2,11 @@ package paymentmaking
 
 import (
 	"context"
-	"net/http"
 	"payment-service/internal/db"
+	"payment-service/internal/features/common"
 	"payment-service/internal/models"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/labstack/echo/v4"
 )
 
 type Repository interface {
@@ -18,6 +17,10 @@ type Repository interface {
 	GetTransactionByRef(
 		ctx context.Context,
 		ref string,
+	) (*models.Transaction, error)
+	GetTransactionByID(
+		ctx context.Context,
+		id string,
 	) (*models.Transaction, error)
 }
 
@@ -66,10 +69,7 @@ func (r *repository) CreateOrGetTransaction(
 	}
 
 	if err != nil {
-		return nil, echo.NewHTTPError(
-			http.StatusInternalServerError,
-			err.Error(),
-		)
+		return nil, common.ErrInternal
 	}
 
 	return &result, nil
@@ -97,17 +97,43 @@ func (r *repository) GetTransactionByRef(
 	)
 
 	if err == pgx.ErrNoRows {
-		return nil, echo.NewHTTPError(
-			http.StatusNotFound,
-			"transaction doesn't exist",
-		)
+		return nil, common.ErrNotFound
 	}
 
 	if err != nil {
-		return nil, echo.NewHTTPError(
-			http.StatusInternalServerError,
-			err.Error(),
-		)
+		return nil, common.ErrInternal
+	}
+	return &tx, nil
+}
+
+func (r *repository) GetTransactionByID(
+	ctx context.Context,
+	id string,
+) (*models.Transaction, error) {
+
+	query := `
+	SELECT id, amount, currency, reference, status, created_at
+	FROM transactions
+	WHERE id = $1
+	`
+
+	var tx models.Transaction
+
+	err := r.db.ConnPool.QueryRow(ctx, query, id).Scan(
+		&tx.ID,
+		&tx.Amount,
+		&tx.Currency,
+		&tx.Ref,
+		&tx.Status,
+		&tx.CreatedAt,
+	)
+
+	if err == pgx.ErrNoRows {
+		return nil, common.ErrNotFound
+	}
+
+	if err != nil {
+		return nil, common.ErrInternal
 	}
 	return &tx, nil
 }
